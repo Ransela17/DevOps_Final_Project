@@ -1,6 +1,6 @@
 variable "environment" {}
 
-variable "public_subnets" {}
+variable "private_subnets" {}
 
 variable "azs" {}
 
@@ -9,6 +9,8 @@ variable "vpc_id" {}
 variable "instance_type" {}
 
 variable "ami" {}
+
+variable "target_group_arn" {}
 
 variable "role" {}
 
@@ -33,3 +35,10 @@ variable "policy_adjustment_type"{
 variable "cooldown_sec"{
   default = 300
 }
+
+variable "key_pair_name" {}
+
+variable "db_host" {}
+variable "db_password" {}
+variable "db_user" {}
+variable "db_name" {}

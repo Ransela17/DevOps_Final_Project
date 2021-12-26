@@ -10,9 +10,59 @@ terraform {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 provider "aws" {
   region                  = var.region
 }
+
+resource "tls_private_key" "ssh_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+# kms key
+resource "aws_kms_key" "default" {
+  description              = "${var.environment} Semetric key"
+  deletion_window_in_days  = 7
+  key_usage                = "ENCRYPT_DECRYPT"
+  customer_master_key_spec = "SYMMETRIC_DEFAULT"
+  policy                   = <<-EOT
+  {
+    "Id": "kms",
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Enable IAM User Permissions",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+            },
+            "Action": "kms:*",
+            "Resource": "*"
+        }
+    ]
+}
+EOT
+
+}
+
+
+#genarate key pair 
+resource "aws_key_pair" "ssh_keypair" {
+  key_name   = "${var.environment}-ssh-key"
+  public_key = tls_private_key.ssh_key.public_key_openssh
+}
+
+#save the private key on aws
+resource "aws_ssm_parameter" "env_ssh_key" {
+  name        = "/${var.environment}/env/credentials"
+  description = "SSH credentials for environment"
+  type        = "SecureString"
+  value       = jsonencode({ "private_key" : tls_private_key.ssh_key.private_key_pem })
+  key_id      = aws_kms_key.default.key_id
+}
+
 
 module "vpc" {
   source = "./modules/vpc"
@@ -35,7 +85,7 @@ module "database" {
   private_subnets 				= module.vpc.private_subnets[0]
   vpc_id 								  = module.vpc.vpc_id
   password 								= var.db_password
-  username 								= var.db_username
+  username 								= var.db_user
   port 								    = var.db_port
   name 								    = var.db_name
   
@@ -63,11 +113,12 @@ module "ec2" {
   public_subnets 						= module.vpc.public_subnets
   vpc_id 								    = module.vpc.vpc_id
   azs                       =  var.azs
-  //db_hostname							  = module.database.rds_hostname
+  db_host							      = module.database.rds_hostname
   //db_port 								  = module.database.rds_port
-  //db_username 							= module.database.rds_username
-  //db_password 							= module.database.rds_password
-  //target_group_arn 					= module.alb.target_group_arn
+  db_name                   = module.database.rds_db_name
+  db_user 						    	= module.database.rds_username
+  db_password 							= module.database.rds_password
+  target_group_arn 					= module.alb.target_group_arn
   //alb_arn_suffix            = module.alb.alb_arn_suffix 
   asg_min_size 		         	= var.asg_min_size
   asg_max_size 		        	= var.asg_max_size
@@ -77,5 +128,6 @@ module "ec2" {
   environment 							= var.environment
   cluster_name              = var.cluster_name
   role                      = {}
+  key_pair_name             = aws_key_pair.ssh_keypair.key_name 
   depends_on = [module.alb]
 } 

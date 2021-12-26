@@ -14,6 +14,11 @@ output "rds_hostname" {
   value = aws_db_instance.rds-db.address
 }
 
+output "rds_db_name" {
+  value = aws_db_instance.rds-db.name 
+}
+
+
 output "rds_port" {
   value = aws_db_instance.rds-db.port
 }

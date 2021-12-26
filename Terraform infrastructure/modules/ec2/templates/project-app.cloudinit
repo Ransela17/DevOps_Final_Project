@@ -1,15 +1,24 @@
 #!/bin/bash
 
-sudo apt update
-sudo apt -y upgrade < "/dev/null"
+apt update
 
-# export db variables
-# sudo echo "export DB_DNS=${DB_DNS}" >> /etc/environment
-# sudo echo "export DB_PORT=${DB_PORT}" >> /etc/environment
-# sudo echo "export DB_USER=${DB_USER}" >> /etc/environment
-# sudo echo "export DB_PASS=${DB_PASS}" >> /etc/environment
+apt -y upgrade < "/dev/null"
 
 # aws cli installation
-sudo apt -y install awscli < "/dev/null"
+apt -y install awscli < "/dev/null"
 
-
+# docker install
+apt-get install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+apt update
+apt-get install docker-ce docker-ce-cli containerd.io -y
+usermod -aG docker ubuntu
+$(aws ecr get-login --no-include-email --region eu-west-1)
+docker run -p 80:80 -e DB_HOST=${DB_HOST} -e DB_USER=${DB_USER} -e DB_PASSWORD=${DB_PASSWORD} -e DB_NAME=${DB_NAME} 089873913758.dkr.ecr.eu-west-1.amazonaws.com/migo

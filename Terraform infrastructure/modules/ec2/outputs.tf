@@ -1,7 +1,3 @@
-output "admin_key_name" {
-  value = aws_key_pair.admin_key
-}
-
 output "aws_launch_config_id" {
   value = aws_launch_configuration.workshop-app_lc.id
 }

@@ -1,3 +1,14 @@
+data "template_file" "user_data" {
+  template = file("${path.module}/templates/project-app.cloudinit")
+
+  vars = {
+    DB_HOST = var.db_host,
+    DB_PASSWORD = var.db_password,
+    DB_USER = var.db_user,
+    DB_NAME = var.db_name
+  }
+}
+
 resource "aws_security_group" "ec2" {
   
   lifecycle {  
@@ -32,18 +43,47 @@ resource "aws_security_group" "ec2" {
   }
 }
 
+data "aws_iam_policy_document" "ec2_instance_policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "ec2_instance_role" {
+  name               = "${var.environment}-ec2-instance"
+  path               = "/"
+  assume_role_policy = data.aws_iam_policy_document.ec2_instance_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_instance_role_attachment" {
+  role       = aws_iam_role.ec2_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_instance_profile" "ec2_instance_profile" {
+  name       = "${var.environment}-ec2-instances"
+  path       = "/"
+  role       = aws_iam_role.ec2_instance_role.id
+}
+
+# Render a part using a `template_file`
 resource "aws_launch_configuration" "workshop-app_lc" {
-  user_data =  file("${path.module}/templates/project-app.cloudinit")
+  user_data =  data.template_file.user_data.rendered
    lifecycle {  # This is necessary to make terraform launch configurations work with autoscaling groups
     create_before_destroy = true
   }
+  iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.id
   security_groups = [aws_security_group.ec2.id]
-  name = "${var.cluster_name}_lc"
+  name_prefix = "${var.cluster_name}_lc"
   enable_monitoring = false
   image_id = var.ami
   instance_type = var.instance_type
-  key_name = aws_key_pair.admin_key.key_name
-  
+  key_name = var.key_pair_name
 }
 
 resource "aws_autoscaling_group" "workshop-app_asg" {
@@ -52,7 +92,8 @@ resource "aws_autoscaling_group" "workshop-app_asg" {
   max_size = var.asg_max_size
   desired_capacity = var.asg_desired_capacity
   launch_configuration = aws_launch_configuration.workshop-app_lc.name
-  vpc_zone_identifier = var.public_subnets[0]
+  vpc_zone_identifier = var.private_subnets
+  target_group_arns     = [var.target_group_arn]
 
   tag {
     key = "Name"
@@ -71,12 +112,6 @@ resource "aws_autoscaling_group" "workshop-app_asg" {
   }
 }
 
-resource "aws_key_pair" "admin_key" {
-  key_name 				  = var.environment
-  public_key 			  = file("${path.module}/keys/admin.pub")
-  tags 					  = { Name = "${var.environment}-key_pair" }
-}
-
 resource "aws_autoscaling_policy" "scale_up" {
   name                   = "${var.environment}-scale-up-policy"
   scaling_adjustment     = 1
@@ -92,23 +127,3 @@ resource "aws_autoscaling_policy" "scale_down" {
   cooldown               = var.cooldown_sec
   autoscaling_group_name = aws_autoscaling_group.workshop-app_asg.name
 }
-  
-  
-  
-
-/*
-  # Render a part using a `template_file`
-data "template_file" "script" {
-  template = file("${path.module}/templates/project-app.cloudinit")
-
-  vars = {
-	  MASTER_IP=var.master_ip
-    VAULT_TOKEN=var.vault_token
-	  DB_DNS=var.db_hostname
-	  DB_PORT=var.db_port
-	  DB_USER=var.db_username
-	  DB_PASS=var.db_password
-  }
-}
-
-*/

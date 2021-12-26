@@ -20,6 +20,8 @@ variable "vpc_cidr" {
   default = "172.18.0.0/18"
 }
 
+
+
 variable "private_subnets" {
   description = "IP prefix of private (vpc only routing) subnets"
   default = ["172.18.0.0/20","172.18.16.0/20"]  
@@ -49,7 +51,7 @@ variable "db_port" {
   default		= 5432
 }
 
-variable "db_username" {
+variable "db_user" {
   default		= "username"
 }
 
