@@ -27,11 +27,11 @@ variable "publicly_accessible" {
 }
 
 variable "engine" {
-  default = "mysql"
+  default = "postgres"
 }
 
 variable "engine_version" {
-  default = "5.7.26"
+  default = "11.10"
 }
 
 variable "instance_class" {
@@ -51,7 +51,7 @@ variable "allocated_storage" {
 }
 
 variable "port" {
-  default = 80
+  default = 5432
 }
 
 variable "username" {}

@@ -1,39 +1,7 @@
-From nobody Mon Apr 11 16:31:45 2016
-Content-Type: multipart/mixed; boundary="===============8263629738082711943=="
-MIME-Version: 1.0
-
---===============8263629738082711943==
-MIME-Version: 1.0
-Content-Type: text/cloud-config; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachement; filename=01-default.cloud-config.template
-
-#cloud-config
-apt_update: True
-apt_upgrade: True
-
-disable_root: False
-ssh_pwauth: False
-manage_etc_hosts: False
-
-cloud_final_modules:
-- [scripts-user, always]
-
-output:
-all: "| tee -a /var/log/cloud-init-output.log"
-
---===============8263629738082711943==
-MIME-Version: 1.0
-Content-Type: text/x-shellscript; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachement; filename=02-default.x-shellscript.template
-
 #!/bin/bash
 
 sudo apt update
 sudo apt -y upgrade < "/dev/null"
-
-sudo apt install -y ${web-app}
 
 # export db variables
 # sudo echo "export DB_DNS=${DB_DNS}" >> /etc/environment
@@ -41,16 +9,7 @@ sudo apt install -y ${web-app}
 # sudo echo "export DB_USER=${DB_USER}" >> /etc/environment
 # sudo echo "export DB_PASS=${DB_PASS}" >> /etc/environment
 
-# chef-solo installation
-wget https://packages.chef.io/files/stable/chefdk/4.13.3/ubuntu/20.04/chefdk_4.13.3-1_amd64.deb
-sudo dpkg -i chefdk_4.13.3-1_amd64.deb
-rm chefdk_4.13.3-1_amd64.deb
-
 # aws cli installation
 sudo apt -y install awscli < "/dev/null"
 
-# run chef cookbook artifact downloaded from private s3 bucket
-#aws s3api get-object --bucket unofficial-chevrolet-auto-shop-bucket --key Chef_ec2.tar.gz Chef_ec2.tar.gz
-# tar -xvzf Chef_ec2.tar.gz -C ~/
-# rm Chef_ec2.tar.gz
-# sudo chef-solo -c ~/Chef_ec2/solo.rb -j ~/Chef_ec2/runlist.json --chef-license accept
+

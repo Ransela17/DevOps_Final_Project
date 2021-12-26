@@ -2,6 +2,8 @@ variable "environment" {}
 
 variable "public_subnets" {}
 
+variable "azs" {}
+
 variable "vpc_id" {}
 
 variable "instance_type" {}
@@ -18,13 +20,16 @@ variable "asg_desired_capacity" {}
 
 variable "asg_max_size" {}
 
-variable "policy_adjustment_type"{}
-
-variable "cooldown_sec"{}
-
 variable "additional_sgs" {
   default = ""
 }
 variable web-app {
   default = "web-app"
 } 
+variable "policy_adjustment_type"{
+  default = "ChangeInCapacity"
+}
+
+variable "cooldown_sec"{
+  default = 300
+}

@@ -32,43 +32,27 @@ resource "aws_security_group" "ec2" {
   }
 }
 
-
-resource "aws_lb" "lb" {
-  name = "lb"
-  load_balancer_type = "application"
-  subnets = var.public_subnets[0]
-  security_groups = [aws_security_group.lb.id]
-    tags = {
-      Environment = "production"
-  }
-}
-
-
 resource "aws_launch_configuration" "workshop-app_lc" {
-  user_data =  templatefile("${path.module}/templates/project-app.cloudinit", {web-app = var.web-app})
+  user_data =  file("${path.module}/templates/project-app.cloudinit")
    lifecycle {  # This is necessary to make terraform launch configurations work with autoscaling groups
     create_before_destroy = true
   }
-  security_groups = [aws_security_group.workshop-app.id]
+  security_groups = [aws_security_group.ec2.id]
   name = "${var.cluster_name}_lc"
   enable_monitoring = false
-
   image_id = var.ami
   instance_type = var.instance_type
-  key_name = data.terraform_remote_state.site.outputs.admin_key_name
+  key_name = aws_key_pair.admin_key.key_name
   
 }
 
 resource "aws_autoscaling_group" "workshop-app_asg" {
   name = "${var.cluster_name}_asg"
-  availability_zone = var.availability_zones
   min_size = var.asg_min_size
   max_size = var.asg_max_size
   desired_capacity = var.asg_desired_capacity
   launch_configuration = aws_launch_configuration.workshop-app_lc.name
-  vpc_zone_identifier = element(data.terraform_remote_state.site.outputs.public_subnets, 0)
-
-  load_balancers = [ aws_elb.workshop-app.name ]
+  vpc_zone_identifier = var.public_subnets[0]
 
   tag {
     key = "Name"
@@ -97,16 +81,16 @@ resource "aws_autoscaling_policy" "scale_up" {
   name                   = "${var.environment}-scale-up-policy"
   scaling_adjustment     = 1
   adjustment_type        = var.policy_adjustment_type
-  cooldown               = 300
-  autoscaling_group_name = aws_autoscaling_group.autoscaling_group.name
+  cooldown               = var.cooldown_sec
+  autoscaling_group_name = aws_autoscaling_group.workshop-app_asg.name
 }
 
 resource "aws_autoscaling_policy" "scale_down" {
   name                   = "${var.environment}-scale-down-policy"
   scaling_adjustment     = -1
   adjustment_type        = var.policy_adjustment_type
-  cooldown               = 300
-  autoscaling_group_name = aws_autoscaling_group.autoscaling_group.name
+  cooldown               = var.cooldown_sec
+  autoscaling_group_name = aws_autoscaling_group.workshop-app_asg.name
 }
   
   

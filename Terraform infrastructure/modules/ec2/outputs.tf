@@ -1,5 +1,5 @@
 output "admin_key_name" {
-  value = aws_ke
+  value = aws_key_pair.admin_key
 }
 
 output "aws_launch_config_id" {

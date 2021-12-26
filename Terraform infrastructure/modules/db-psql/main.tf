@@ -1,12 +1,12 @@
-resource "aws_security_group" "rds-mysql-db" {
-  name = "workshop_rds"
+resource "aws_security_group" "rds-psql-db" {
+  name = "workshop_rds2"
   description = "sg for workshop rds"
   vpc_id = var.vpc_id
 
 
   ingress {
-    from_port = 3306
-    to_port = 3306
+    from_port = 5432
+    to_port = 5432
     protocol = "TCP"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -42,7 +42,7 @@ resource "aws_db_instance" "rds-db" {
   storage_type		      = var.storage_type
   db_subnet_group_name  = aws_db_subnet_group.rds-db-default-group.name
   availability_zone     = var.azs[0]
-  vpc_security_group_ids = [ aws_security_group.rds-mysql-db.id ]
+  vpc_security_group_ids = [ aws_security_group.rds-psql-db.id ]
   
   tags 					= { Name = "${var.environment}-db_instance" }
 }

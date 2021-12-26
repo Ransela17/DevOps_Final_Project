@@ -46,7 +46,7 @@ variable "db_name" {
 }
 
 variable "db_port" {
-  default		= 3306
+  default		= 5432
 }
 
 variable "db_username" {

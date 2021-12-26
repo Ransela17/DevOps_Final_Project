@@ -25,4 +25,13 @@ variable "multi_az" {
   default = false
 }
 
+variable "policy_adjustment_type"{
+  default = "ChangeInCapacity"
+}
+
+variable "cooldown_sec"{
+  default = 300
+}
+
+
 

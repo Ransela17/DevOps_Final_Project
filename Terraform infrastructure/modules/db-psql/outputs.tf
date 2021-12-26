@@ -7,7 +7,7 @@ output "db_subnet_group" {
 }
 
 output "rds_security_group" {
-  value = [ aws_security_group.rds-mysql-db.id ]
+  value = [ aws_security_group.rds-psql-db.id ]
 }
 
 output "rds_hostname" {
